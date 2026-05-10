@@ -42,6 +42,21 @@ function loadCards() {
   }
 }
 
+// ── Responsive helper ──────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' &&
+    window.matchMedia(`(max-width: ${breakpoint}px)`).matches
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ── App ────────────────────────────────────────────────────────
 export default function App() {
   const [phase, setPhase] = useState('topic');   // 'topic' | 'chat'
@@ -59,6 +74,8 @@ export default function App() {
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
+  const isMobile = useIsMobile();
+  const [mobileGrammarOpen, setMobileGrammarOpen] = useState(false);
   const messageCountRef = useRef(0);
   const lastFireDateRef = useRef(localStorage.getItem('chloe_notif_lastFired') || '');
 
@@ -66,6 +83,13 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('chloe_cards', JSON.stringify(cards));
   }, [cards]);
+
+  // Lock body scroll while mobile drawer is open
+  useEffect(() => {
+    if (!isMobile) return;
+    document.body.style.overflow = mobileGrammarOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobile, mobileGrammarOpen]);
 
   // ── Topic select → fetch greeting ────────────────────────────
   const handleTopicSelect = useCallback(async (selectedTopic) => {
@@ -321,41 +345,56 @@ export default function App() {
   return (
     <div style={styles.app}>
       {/* Header */}
-      <header style={styles.header}>
+      <header style={isMobile ? { ...styles.header, ...styles.headerMobile } : styles.header}>
         <div style={styles.headerLeft}>
           <button style={styles.backBtn} onClick={handleChangeTopic} title="Change topic">
             ←
           </button>
           <div style={styles.teacherInfo}>
             <div style={styles.avatar}>👩‍🏫</div>
-            <div>
-              <div style={styles.teacherName}>Chloe</div>
-              <div style={styles.teacherSub}>AI English Teacher</div>
-            </div>
+            {!isMobile && (
+              <div>
+                <div style={styles.teacherName}>Chloe</div>
+                <div style={styles.teacherSub}>AI English Teacher</div>
+              </div>
+            )}
           </div>
-          <TopicBadge topic={topic} />
+          {!isMobile && <TopicBadge topic={topic} />}
         </div>
         <div style={styles.headerRight}>
-          {cardsGenerating && (
+          {!isMobile && cardsGenerating && (
             <span style={styles.generatingBadge}>✨ Saving cards…</span>
           )}
           <button
-            style={styles.cardsBtn}
+            style={isMobile ? styles.iconBtn : styles.cardsBtn}
             onClick={() => setShowCards(true)}
             title="Review flashcards"
           >
-            📖 Cards {cards.length > 0 && <span style={styles.cardCount}>{cards.length}</span>}
+            📖{!isMobile && ' Cards'}
+            {cards.length > 0 && <span style={styles.cardCount}>{cards.length}</span>}
           </button>
           <button
-            style={styles.cardsBtn}
+            style={isMobile ? styles.iconBtn : styles.cardsBtn}
             onClick={() => setShowNotifSettings(true)}
             title="Notification settings"
           >
-            🔔 {notifSettings.enabled && notifPermission === 'granted' ? notifSettings.time : 'Off'}
+            🔔{!isMobile && ` ${notifSettings.enabled && notifPermission === 'granted' ? notifSettings.time : 'Off'}`}
           </button>
-          <div style={styles.streakBadge} title="Day streak">
-            🔥 {streak}
-          </div>
+          {!isMobile && (
+            <div style={styles.streakBadge} title="Day streak">
+              🔥 {streak}
+            </div>
+          )}
+          {isMobile && (
+            <button
+              style={styles.hamburgerBtn}
+              onClick={() => setMobileGrammarOpen(true)}
+              title="Open grammar panel"
+              aria-label="Open grammar panel"
+            >
+              ☰
+            </button>
+          )}
         </div>
       </header>
 
@@ -368,16 +407,59 @@ export default function App() {
             onSend={handleSend}
           />
         </div>
-        <div style={styles.grammarArea}>
-          <GrammarPanel
-            result={grammarResult}
-            loading={grammarLoading}
-            onGenerateCards={handleGenerateCards}
-            cardsGenerating={cardsGenerating}
-            hasMessages={messages.length > 2}
-          />
-        </div>
+        {!isMobile && (
+          <div style={styles.grammarArea}>
+            <GrammarPanel
+              result={grammarResult}
+              loading={grammarLoading}
+              onGenerateCards={handleGenerateCards}
+              cardsGenerating={cardsGenerating}
+              hasMessages={messages.length > 2}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Mobile grammar drawer */}
+      {isMobile && (
+        <>
+          <div
+            style={{
+              ...styles.drawerBackdrop,
+              opacity: mobileGrammarOpen ? 1 : 0,
+              pointerEvents: mobileGrammarOpen ? 'auto' : 'none'
+            }}
+            onClick={() => setMobileGrammarOpen(false)}
+          />
+          <aside
+            style={{
+              ...styles.drawer,
+              transform: mobileGrammarOpen ? 'translateX(0)' : 'translateX(100%)'
+            }}
+            aria-hidden={!mobileGrammarOpen}
+          >
+            <div style={styles.drawerToolbar}>
+              <span style={styles.drawerStreak} title="Day streak">🔥 {streak}</span>
+              <button
+                style={styles.drawerCloseBtn}
+                onClick={() => setMobileGrammarOpen(false)}
+                aria-label="Close grammar panel"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div style={styles.drawerInner}>
+              <GrammarPanel
+                result={grammarResult}
+                loading={grammarLoading}
+                onGenerateCards={handleGenerateCards}
+                cardsGenerating={cardsGenerating}
+                hasMessages={messages.length > 2}
+              />
+            </div>
+          </aside>
+        </>
+      )}
 
       {showCards && (
         <ReviewModal
@@ -564,5 +646,95 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     background: 'var(--surface)'
+  },
+  headerMobile: {
+    padding: '10px 12px',
+    gap: '8px'
+  },
+  iconBtn: {
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    minWidth: '40px',
+    height: '36px',
+    padding: '0 8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: 'var(--text-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    cursor: 'pointer',
+    flexShrink: 0
+  },
+  hamburgerBtn: {
+    background: 'var(--primary)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    width: '40px',
+    height: '36px',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    flexShrink: 0
+  },
+  drawerBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.45)',
+    zIndex: 90,
+    transition: 'opacity 0.25s ease'
+  },
+  drawer: {
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    height: '100%',
+    width: 'min(86vw, 360px)',
+    background: 'var(--surface)',
+    borderLeft: '1px solid var(--border)',
+    boxShadow: '-8px 0 24px rgba(0,0,0,0.18)',
+    zIndex: 100,
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+  },
+  drawerToolbar: {
+    padding: '8px 12px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: 'var(--surface-2)',
+    borderBottom: '1px solid var(--border)',
+    flexShrink: 0
+  },
+  drawerStreak: {
+    background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+    border: '1px solid #F59E0B',
+    borderRadius: '8px',
+    padding: '4px 10px',
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#92400E'
+  },
+  drawerCloseBtn: {
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    padding: '4px 10px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer'
+  },
+  drawerInner: {
+    flex: 1,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column'
   }
 };
