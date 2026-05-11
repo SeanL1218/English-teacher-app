@@ -209,6 +209,55 @@ Return just the message text — no quotes, no explanation.`;
   }
 });
 
+// Growth Coach: single-sentence correction + scoring
+const COACH_SYSTEM_PROMPT = `You are an English Growth Coach for Korean professionals. Analyze ONE English sentence the user wrote and return ONLY a valid JSON object with this exact structure:
+{
+  "corrected": "the most natural, professional rewrite of the sentence (keep the user's intent; if already perfect, repeat it verbatim)",
+  "explanation": "ONE short, warm, encouraging sentence in Korean explaining the key change or, if no change, what makes the sentence work. Max ~120 characters.",
+  "scores": {
+    "accuracy": 0-100 integer (grammar/spelling correctness),
+    "naturalness": 0-100 integer (how natively a fluent speaker would phrase it),
+    "businessTone": 0-100 integer (appropriateness for professional/business context)
+  },
+  "mistakeType": "one short label in English from this set when possible: Grammar, Word Choice, Article/Preposition, Tense, Tone, Word Order, Spelling, Punctuation, None"
+}
+Scoring guidance:
+- If the sentence is already excellent, scores can all be 90–100 and mistakeType is "None".
+- Be generous but honest. Reward clear communication.
+Return ONLY valid JSON, no markdown, no extra text.`;
+
+app.post('/api/coach', async (req, res) => {
+  const { sentence } = req.body;
+
+  if (!sentence || sentence.trim().length < 2) {
+    return res.status(400).json({ error: 'Sentence is required.' });
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 600,
+      system: COACH_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: `Analyze this sentence: "${sentence.trim()}"` }]
+    });
+
+    const textBlock = response.content.find(b => b.type === 'text');
+    if (!textBlock) {
+      return res.status(502).json({ error: 'Empty response from model.' });
+    }
+
+    try {
+      const result = parseJSON(textBlock.text);
+      return res.json(result);
+    } catch {
+      return res.status(502).json({ error: 'Could not parse coach response.' });
+    }
+  } catch (error) {
+    console.error('Coach error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Review card generation endpoint
 app.post('/api/review-cards', async (req, res) => {
   const { conversation, topic } = req.body;
