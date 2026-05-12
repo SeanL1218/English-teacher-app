@@ -40,3 +40,388 @@
   flex-shrink: 0;
 }
 
+.coach-tab {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.coach-tab-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.coach-tab-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.coach-tab-active {
+  color: var(--primary);
+}
+
+.coach-tab-active .coach-tab-label {
+  font-weight: 700;
+}
+
+/* Section 2: common section styles */
+
+.coach-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  padding: 0 20px;
+}
+
+.coach-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  padding: 0 20px;
+  line-height: 1.5;
+}
+
+.coach-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.coach-empty {
+  margin: 24px 20px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.coach-original {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.coach-corrected {
+  font-size: 15px;
+  color: var(--primary);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.coach-explanation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.coach-encourage {
+  margin: 16px 20px 0;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Section 3: Practice screen */
+
+.coach-practice {
+  padding-top: 4px;
+}
+
+.coach-form {
+  margin: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.coach-form button {
+  align-self: stretch;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coach-form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.coach-error {
+  padding: 10px 12px;
+  background: rgba(220, 70, 70, 0.08);
+  border: 1px solid rgba(220, 70, 70, 0.25);
+  border-radius: 10px;
+  color: #c0392b;
+  font-size: 13px;
+}
+
+.coach-card {
+  margin: 0 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coach-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coach-scores {
+  display: flex;
+  gap: 8px;
+}
+
+.coach-chip {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.coach-chip-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.coach-chip-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.coach-summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.coach-again {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Section 4: Progress screen */
+
+.coach-progress {
+  padding-top: 4px;
+}
+
+.coach-stat-grid {
+  margin: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.coach-stat {
+  padding: 14px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.coach-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.coach-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.coach-stat-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+
+/* Section 5: Mistakes screen */
+
+.coach-mistakes {
+  padding-top: 4px;
+}
+
+.coach-mistakes-head {
+  margin: 0 20px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.coach-clear {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.coach-mistake-list {
+  margin: 0 20px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-mistake-item {
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coach-mistake-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.coach-mistake-type {
+  padding: 2px 8px;
+  background: rgba(120, 90, 200, 0.12);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.coach-mistake-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.coach-mistake-original {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  text-decoration: line-through;
+  text-decoration-color: rgba(150, 150, 150, 0.5);
+}
+
+.coach-mistake-corrected {
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Section 6: Review screen */
+
+.coach-review {
+  padding-top: 4px;
+}
+
+.coach-review-card {
+  margin: 0 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-review-input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.coach-show {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
