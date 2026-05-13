@@ -25,7 +25,9 @@ export default function Practice({ onSaved }) {
         id: Date.now(),
         original: sentence.trim(),
         corrected: data.corrected,
-        explanation: data.explanation,
+        koreanTranslation: data.koreanTranslation,
+        learningPoint: data.learningPoint,
+        followUpQuestion: data.followUpQuestion,
         scores: data.scores,
         mistakeType: data.mistakeType,
         createdAt: new Date().toISOString()
@@ -70,17 +72,27 @@ export default function Practice({ onSaved }) {
       {result && (
         <div className="coach-card">
           <div className="coach-row">
-            <div className="coach-label">원문</div>
-            <div className="coach-original">{result.original}</div>
-          </div>
-          <div className="coach-row">
             <div className="coach-label">자연스러운 표현</div>
             <div className="coach-corrected">{result.corrected}</div>
           </div>
-          <div className="coach-row">
-            <div className="coach-label">코치 한마디</div>
-            <div className="coach-explanation">{result.explanation}</div>
-          </div>
+          {result.koreanTranslation && (
+            <div className="coach-row">
+              <div className="coach-label">우리말 뜻</div>
+              <div className="coach-explanation">{result.koreanTranslation}</div>
+            </div>
+          )}
+          {result.learningPoint && (
+            <div className="coach-row">
+              <div className="coach-label">학습 포인트</div>
+              <div className="coach-explanation">{result.learningPoint}</div>
+            </div>
+          )}
+          {result.followUpQuestion && (
+            <div className="coach-row">
+              <div className="coach-label">다음 연습</div>
+              <div className="coach-corrected">{result.followUpQuestion}</div>
+            </div>
+          )}
 
           <div className="coach-scores">
             <Chip label="정확성" value={result.scores && result.scores.accuracy} />
