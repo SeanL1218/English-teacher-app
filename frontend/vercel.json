@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://english-teacher-backend.onrender.com/api/:path*"
+      "destination": "https://english-teacher-2-0.onrender.com/api/:path*"
     }
   ]
 }
