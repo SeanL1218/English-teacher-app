@@ -1,13 +1,87 @@
-/* Pivot MVP — 90-second coach. Mobile-first, single column. */
+/* Pivot 90s — fast daily English drill. Mobile-first, single column. */
 
 .pivot-screen {
   min-height: 100%;
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 24px;
+  background: var(--bg);
+}
+
+.pivot-header {
+  width: 100%;
+  max-width: 480px;
+  padding: 18px 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pivot-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pivot-brand {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.pivot-brand-mark {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #ffffff;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-right: 8px;
+  vertical-align: 2px;
+}
+
+.pivot-tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: -0.005em;
+}
+
+.pivot-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pivot-chip {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pivot-chip.timer {
+  color: var(--primary-dark);
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+}
+
+.pivot-screen-body {
+  width: 100%;
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
-  background: var(--bg);
+  padding: 12px 0;
 }
 
 .pivot-card {
@@ -40,14 +114,88 @@
 }
 
 .pivot-prompt-ko {
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  padding: 18px 16px;
+  padding: 24px 18px;
   background: var(--primary-bg);
   border-radius: var(--radius-md);
-  margin: 6px 0;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.pivot-prompt-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+.pivot-flow-preview {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.pivot-flow-preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.005em;
+}
+
+.pivot-flow-step {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.pivot-flow-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pivot-hero-mark {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.pivot-hero-tagline {
+  font-size: 16px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.pivot-done-mark {
+  text-align: center;
+  font-size: 36px;
+  margin: 4px 0 0;
 }
 
 .pivot-input,
