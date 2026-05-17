@@ -312,6 +312,105 @@ ${conversation}`;
   }
 });
 
+// ============================================================
+// PIVOT: 90-second memory-based coach endpoints
+// ============================================================
+
+const PIVOT_PROMPT_SYSTEM = `You are Chloe, an AI English coach for a Korean-speaking learner.
+Generate ONE short Korean sentence the learner will translate into English in a 90-second daily session.
+
+Rules:
+- Korean sentence: one clause, 5-10 syllables, natural spoken Korean.
+- The expected English: 6-12 words, natural everyday usage, not textbook.
+- If a target pattern is given, the sentence MUST exercise it.
+- Match the goal context (daily_conversation / job_interview / travel / exam).
+- Do not repeat the listed recent topics.
+
+Return ONLY valid JSON, no markdown:
+{"korean":"...","expectedEnglish":"...","targetPattern":"..."}`;
+
+const PIVOT_EVAL_SYSTEM = `You are Chloe, an AI English coach. Evaluate ONE student translation.
+Be warm, honest, specific, and short. You are a tutor noticing something, not a textbook.
+
+Scoring:
+- "ok" = true if the student's English communicates the same meaning AND is grammatically natural. Minor word choice differences from expectedEnglish are fine.
+- "mistakeType" must be one of: "Preposition","Article","Tense","WordOrder","Vocabulary","Spelling","None".
+- "mistakeSubtype" is a short tag like "since/for", "a/the", "past simple vs present perfect", or null.
+- "corrected" = the most natural English version (use the student's word choices when possible).
+- "feedback_ko" = ONE Korean sentence, max 20 words, NO grammar lecture. Sound like a friend who teaches English.
+
+Return ONLY valid JSON, no markdown:
+{"ok":bool,"mistakeType":"...","mistakeSubtype":"...|null","corrected":"...","feedback_ko":"..."}`;
+
+app.post('/api/pivot/prompt', async (req, res) => {
+  const { goal = 'daily_conversation', targetPattern = null, recentTopics = [] } = req.body || {};
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 200,
+      system: [
+        { type: 'text', text: PIVOT_PROMPT_SYSTEM, cache_control: { type: 'ephemeral' } }
+      ],
+      messages: [{
+        role: 'user',
+        content: `Goal: ${goal}\nTarget pattern: ${targetPattern || 'any'}\nRecent topics to avoid: ${recentTopics.slice(0, 5).join(', ') || 'none'}\n\nGenerate today's prompt.`
+      }]
+    });
+
+    const textBlock = response.content.find(b => b.type === 'text');
+    if (!textBlock) return res.status(502).json({ error: 'Empty model response.' });
+
+    try {
+      const out = parseJSON(textBlock.text);
+      if (!out.korean || !out.expectedEnglish) {
+        return res.status(502).json({ error: 'Malformed prompt.' });
+      }
+      return res.json(out);
+    } catch {
+      return res.status(502).json({ error: 'Could not parse prompt.' });
+    }
+  } catch (error) {
+    console.error('Pivot prompt error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/pivot/evaluate', async (req, res) => {
+  const { korean, expectedEnglish, targetPattern, studentResponse } = req.body || {};
+
+  if (!studentResponse || studentResponse.trim().length < 1) {
+    return res.status(400).json({ error: 'studentResponse is required.' });
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 350,
+      system: [
+        { type: 'text', text: PIVOT_EVAL_SYSTEM, cache_control: { type: 'ephemeral' } }
+      ],
+      messages: [{
+        role: 'user',
+        content: `Korean prompt: ${korean}\nOne valid English: ${expectedEnglish}\nTarget pattern: ${targetPattern || 'none'}\nStudent wrote: "${studentResponse.trim()}"\n\nEvaluate.`
+      }]
+    });
+
+    const textBlock = response.content.find(b => b.type === 'text');
+    if (!textBlock) return res.status(502).json({ error: 'Empty model response.' });
+
+    try {
+      const out = parseJSON(textBlock.text);
+      return res.json(out);
+    } catch {
+      return res.status(502).json({ error: 'Could not parse evaluation.' });
+    }
+  } catch (error) {
+    console.error('Pivot evaluate error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Chloe English Teacher backend running on http://localhost:${PORT}`);
