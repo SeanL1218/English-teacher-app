@@ -317,14 +317,26 @@ ${conversation}`;
 // ============================================================
 
 const PIVOT_PROMPT_SYSTEM = `You are Chloe, an AI English coach for a Korean-speaking learner.
-Generate ONE short Korean sentence the learner will translate into English in a 90-second daily session.
+Generate ONE Korean sentence the learner will translate into English in a 90-second daily drill.
 
-Rules:
-- Korean sentence: one clause, 5-10 syllables, natural spoken Korean.
-- The expected English: 6-12 words, natural everyday usage, not textbook.
-- If a target pattern is given, the sentence MUST exercise it.
-- Match the goal context (daily_conversation / job_interview / travel / exam).
-- Do not repeat the listed recent topics.
+LEVEL DETERMINES DIFFICULTY (this is the most important input):
+- beginner: present simple / past simple, concrete daily nouns. Korean 5-9 syllables → English 4-8 words.
+- intermediate: present perfect, conditionals, common idioms, casual + light professional. Korean 9-13 syllables → English 8-13 words.
+- advanced: nuanced register shifts, hedging, complex tense aspects, idiomatic adult speech, polite disagreement, soft persuasion, spontaneous reactions, social-professional crossover. Korean 11-17 syllables → English 11-18 words.
+- business: workplace English for meetings, emails, negotiation, networking, escalation, pushback, presentations, mentorship, status updates. Korean 13-19 syllables → English 13-22 words.
+
+For advanced and business levels: NEVER produce textbook beginner prompts like "오늘 뭐 했어?" or "날씨가 어때?". Default to realistic adult situations with meaningful stakes. Examples by level:
+- Advanced sample: "솔직히 그 의견에는 동의하기 어려운 부분이 있어요." / "그 제안 좋긴 한데 일정상 좀 빠듯할 것 같아요." / "그 영화는 기대만큼은 아니었는데, 마지막 장면은 좋았어."
+- Business sample: "이번 분기는 보수적으로 잡고 다음 분기에 다시 검토하시죠." / "그 부분은 제가 책임지고 일정 안에 마무리하겠습니다." / "결정 전에 팀원들 의견을 한번 더 모아보면 어떨까요?"
+
+GOAL DETERMINES CONTEXT (combine with level):
+- daily_conversation: family, friends, hobbies, opinions, current events, social situations
+- job_interview: behavioral STAR answers, motivations, strengths/weaknesses, career goals. For advanced+: MBA-style interview material, why-this-company, leadership stories.
+- travel: trip planning, problem-solving abroad, cultural exchanges, hotel/restaurant friction
+- exam: for advanced/business, lean toward OPIc AL-style spontaneous narration and opinion-giving prompts rather than TOEIC vocab drills.
+
+If a target pattern is given, the sentence MUST exercise it.
+Do not repeat the listed recent topics. Avoid prompts the learner has likely seen elsewhere.
 
 Return ONLY valid JSON, no markdown:
 {"korean":"...","expectedEnglish":"...","targetPattern":"..."}`;
@@ -342,19 +354,22 @@ Scoring:
 Return ONLY valid JSON, no markdown:
 {"ok":bool,"mistakeType":"...","mistakeSubtype":"...|null","corrected":"...","feedback_ko":"..."}`;
 
+const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'business']);
+
 app.post('/api/pivot/prompt', async (req, res) => {
-  const { goal = 'daily_conversation', targetPattern = null, recentTopics = [] } = req.body || {};
+  const { goal = 'daily_conversation', level: rawLevel, targetPattern = null, recentTopics = [] } = req.body || {};
+  const level = VALID_LEVELS.has(rawLevel) ? rawLevel : 'intermediate';
 
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 200,
+      max_tokens: 250,
       system: [
         { type: 'text', text: PIVOT_PROMPT_SYSTEM, cache_control: { type: 'ephemeral' } }
       ],
       messages: [{
         role: 'user',
-        content: `Goal: ${goal}\nTarget pattern: ${targetPattern || 'any'}\nRecent topics to avoid: ${recentTopics.slice(0, 5).join(', ') || 'none'}\n\nGenerate today's prompt.`
+        content: `Level: ${level}\nGoal: ${goal}\nTarget pattern: ${targetPattern || 'any'}\nRecent topics to avoid: ${recentTopics.slice(0, 5).join(', ') || 'none'}\n\nGenerate today's prompt. Match the level strictly.`
       }]
     });
 

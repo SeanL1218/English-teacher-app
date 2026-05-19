@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { initProfile } from './profile.js';
+import { LevelOptions } from './LevelPicker.jsx';
 
 const GOALS = [
   { id: 'daily_conversation', label: '일상 대화' },
   { id: 'job_interview', label: '면접 / 비즈니스' },
   { id: 'travel', label: '여행' },
-  { id: 'exam', label: '시험 (TOEIC 등)' },
+  { id: 'exam', label: '시험 / OPIc' },
 ];
 
 function Header() {
@@ -25,9 +26,10 @@ export default function Onboarding({ onDone }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState(null);
+  const [level, setLevel] = useState(null);
 
   function start() {
-    const profile = initProfile({ name, goal });
+    const profile = initProfile({ name, goal, level });
     onDone(profile);
   }
 
@@ -93,6 +95,23 @@ export default function Onboarding({ onDone }) {
           )}
 
           {step === 2 && (
+            <>
+              <p className="pivot-coach-line">지금 영어 수준이 어느 정도예요?</p>
+              <p className="pivot-coach-line muted small">
+                레벨에 맞춰 난이도가 자동으로 조절돼요. 고급/비즈니스는 실제 회의·면접 문장이 나와요.
+              </p>
+              <LevelOptions value={level} onChange={setLevel} />
+              <button
+                className="pivot-button primary"
+                disabled={!level}
+                onClick={() => setStep(3)}
+              >
+                다음
+              </button>
+            </>
+          )}
+
+          {step === 3 && (
             <>
               <p className="pivot-coach-line">좋아요. 진행은 이렇게 돼요.</p>
               <div className="pivot-flow-preview">

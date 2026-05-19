@@ -6,6 +6,7 @@ const DEFAULT = {
     name: '',
     L1: 'ko',
     goal: 'daily_conversation',
+    level: null,
   },
   skillState: {
     activeTargets: [],
@@ -39,14 +40,24 @@ export function saveProfile(profile) {
   localStorage.setItem(KEY, JSON.stringify(profile));
 }
 
-export function initProfile({ name, goal }) {
+export function initProfile({ name, goal, level }) {
   const profile = {
     ...DEFAULT,
-    identity: { ...DEFAULT.identity, name: name.trim(), goal },
+    identity: { ...DEFAULT.identity, name: name.trim(), goal, level },
     onboardedAt: new Date().toISOString(),
   };
   saveProfile(profile);
   return profile;
+}
+
+export function setLevel(profile, level) {
+  const next = {
+    ...profile,
+    identity: { ...profile.identity, level },
+    coachState: { ...profile.coachState, todayPrompt: null },
+  };
+  saveProfile(next);
+  return next;
 }
 
 export function todayISODate() {

@@ -62,6 +62,7 @@ export default function DailySession({ profile, onProfileChange }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             goal: profile.identity.goal,
+            level: profile.identity.level,
             targetPattern: pickNextTargetPattern(profile),
             recentTopics: getRecentTopics(profile),
           }),
