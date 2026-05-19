@@ -379,18 +379,29 @@ Notice: in every pair, the English and Korean say the SAME thing.
 Return ONLY valid JSON, no markdown, no extra text:
 {"korean":"...","expectedEnglish":"...","targetPattern":"..."}`;
 
-const PIVOT_EVAL_SYSTEM = `You are Chloe, an AI English coach. Evaluate ONE student translation.
-Be warm, honest, specific, and short. You are a tutor noticing something, not a textbook.
+const PIVOT_EVAL_SYSTEM = `You are Chloe, an AI English coach. Evaluate ONE student translation and produce learning material the student can review later.
 
-Scoring:
+Be warm, honest, specific, and short in the live feedback. Save depth for the explanation/examples/alternatives fields.
+
+FIELD CONTRACT:
 - "ok" = true if the student's English communicates the same meaning AND is grammatically natural. Minor word choice differences from expectedEnglish are fine.
-- "mistakeType" must be one of: "Preposition","Article","Tense","WordOrder","Vocabulary","Spelling","None".
-- "mistakeSubtype" is a short tag like "since/for", "a/the", "past simple vs present perfect", or null.
-- "corrected" = the most natural English version (use the student's word choices when possible).
-- "feedback_ko" = ONE Korean sentence, max 20 words, NO grammar lecture. Sound like a friend who teaches English.
+- "mistakeType" (narrow): one of "Preposition","Article","Tense","WordOrder","Vocabulary","Spelling","Naturalness","Register","Hedging","None".
+- "mistakeSubtype": short tag (e.g., "since/for", "a/the", "past simple vs present perfect", "too direct for business"), or null when ok.
+- "patternCategory" (broad — pick the SINGLE best fit): one of "tense","wordChoice","preposition","article","naturalness","businessTone","hedging","sentenceStructure","none".
+- "corrected": the most natural English version. When possible reuse the student's word choices.
+- "feedback_ko": ONE Korean sentence, max 20 words. The live coach line. No grammar lecture. Friend tone.
+- "explanation_ko": 1-2 Korean sentences explaining WHY the correction matters. This goes into the Review screen. May reference the grammar concept once, plainly.
+- "examples": ARRAY of 2-3 short English example sentences using the same target expression in different contexts. Each ≤14 words.
+- "alternatives": ARRAY of 2-3 alternative natural English phrasings expressing the SAME meaning as "corrected". Each ≤16 words.
+
+When ok=true:
+- explanation_ko: ONE Korean sentence acknowledging what worked well (specific, not generic praise).
+- examples: 2-3 sentences showing the same pattern used naturally.
+- alternatives: 2-3 other natural ways to say the same thing.
+- mistakeType: "None", patternCategory: "none", mistakeSubtype: null.
 
 Return ONLY valid JSON, no markdown:
-{"ok":bool,"mistakeType":"...","mistakeSubtype":"...|null","corrected":"...","feedback_ko":"..."}`;
+{"ok":bool,"mistakeType":"...","mistakeSubtype":"...|null","patternCategory":"...","corrected":"...","feedback_ko":"...","explanation_ko":"...","examples":["...","..."],"alternatives":["...","..."]}`;
 
 const VALID_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'business']);
 
@@ -439,7 +450,7 @@ app.post('/api/pivot/evaluate', async (req, res) => {
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 350,
+      max_tokens: 700,
       system: [
         { type: 'text', text: PIVOT_EVAL_SYSTEM, cache_control: { type: 'ephemeral' } }
       ],
@@ -454,6 +465,10 @@ app.post('/api/pivot/evaluate', async (req, res) => {
 
     try {
       const out = parseJSON(textBlock.text);
+      out.examples = Array.isArray(out.examples) ? out.examples.slice(0, 3) : [];
+      out.alternatives = Array.isArray(out.alternatives) ? out.alternatives.slice(0, 3) : [];
+      out.patternCategory = out.patternCategory || 'none';
+      out.explanation_ko = out.explanation_ko || '';
       return res.json(out);
     } catch {
       return res.status(502).json({ error: 'Could not parse evaluation.' });

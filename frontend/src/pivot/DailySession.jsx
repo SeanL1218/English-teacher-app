@@ -5,6 +5,9 @@ import {
   pickNextTargetPattern,
   getRecentTopics,
   recordSessionResult,
+  pickDueReview,
+  snoozeReview,
+  PATTERN_LABELS,
 } from './profile.js';
 import { greeting, feedbackHeader, closing } from './coachVoice.js';
 
@@ -16,7 +19,7 @@ function formatElapsed(sec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function Header({ streak, elapsedSec, showTimer }) {
+function Header({ streak, elapsedSec, showTimer, onReview, reviewBadge }) {
   return (
     <div className="pivot-header">
       <div className="pivot-header-top">
@@ -28,6 +31,9 @@ function Header({ streak, elapsedSec, showTimer }) {
           {showTimer && (
             <span className="pivot-chip timer">⏱ {formatElapsed(elapsedSec)}</span>
           )}
+          <button className="pivot-chip nav" onClick={onReview}>
+            복습{reviewBadge > 0 ? ` ${reviewBadge}` : ''}
+          </button>
         </div>
       </div>
       <div className="pivot-tagline">하루 90초, 한 문장.</div>
@@ -35,15 +41,20 @@ function Header({ streak, elapsedSec, showTimer }) {
   );
 }
 
-export default function DailySession({ profile, onProfileChange }) {
+export default function DailySession({ profile, onProfileChange, onNavReview }) {
   const [stage, setStage] = useState(STAGE.LOADING);
   const [prompt, setPrompt] = useState(null);
+  const [reviewOfSessionId, setReviewOfSessionId] = useState(null);
   const [response, setResponse] = useState('');
   const [evaluation, setEvaluation] = useState(null);
   const [error, setError] = useState(null);
   const [elapsedSec, setElapsedSec] = useState(0);
 
-  const greetingLine = useMemo(() => greeting(profile), [profile]);
+  const isReview = !!reviewOfSessionId;
+  const greetingLine = useMemo(() => greeting(profile, isReview), [profile, isReview]);
+  const reviewBadgeCount = profile.spacedReview.filter(
+    r => new Date(r.dueAt).getTime() <= Date.now()
+  ).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -52,10 +63,28 @@ export default function DailySession({ profile, onProfileChange }) {
       if (cached) {
         if (!cancelled) {
           setPrompt(cached);
+          setReviewOfSessionId(cached.reviewOfSessionId || null);
           setStage(STAGE.READY);
         }
         return;
       }
+
+      const due = pickDueReview(profile);
+      if (due) {
+        const reviewPrompt = {
+          korean: due.korean,
+          expectedEnglish: due.expectedEnglish,
+          targetPattern: due.targetPattern,
+        };
+        const updated = lockTodayPrompt(profile, reviewPrompt, { reviewOfSessionId: due.sessionId });
+        if (cancelled) return;
+        onProfileChange(updated);
+        setPrompt(reviewPrompt);
+        setReviewOfSessionId(due.sessionId);
+        setStage(STAGE.READY);
+        return;
+      }
+
       try {
         const r = await fetch('/api/pivot/prompt', {
           method: 'POST',
@@ -74,7 +103,7 @@ export default function DailySession({ profile, onProfileChange }) {
         onProfileChange(updated);
         setPrompt(data);
         setStage(STAGE.READY);
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setError('잠깐 연결이 안 되네요. 다시 시도해주세요.');
           setStage(STAGE.READY);
@@ -111,11 +140,20 @@ export default function DailySession({ profile, onProfileChange }) {
       });
       if (!r.ok) throw new Error('eval failed');
       const data = await r.json();
-      const updated = recordSessionResult(profile, data);
+      let updated = recordSessionResult(profile, data, {
+        korean: prompt.korean,
+        expectedEnglish: prompt.expectedEnglish,
+        targetPattern: prompt.targetPattern,
+        studentResponse: response,
+        reviewOfSessionId,
+      });
+      if (!data.ok && isReview) {
+        updated = snoozeReview(updated, reviewOfSessionId, 1);
+      }
       onProfileChange(updated);
       setEvaluation(data);
       setStage(STAGE.DONE);
-    } catch (e) {
+    } catch {
       setError('평가에 실패했어요. 한 번만 더 보내볼게요.');
       setStage(STAGE.READY);
     }
@@ -126,7 +164,13 @@ export default function DailySession({ profile, onProfileChange }) {
   if (stage === STAGE.LOADING) {
     return (
       <div className="pivot-screen">
-        <Header streak={streak} elapsedSec={0} showTimer={false} />
+        <Header
+          streak={streak}
+          elapsedSec={0}
+          showTimer={false}
+          onReview={onNavReview}
+          reviewBadge={reviewBadgeCount}
+        />
         <div className="pivot-screen-body">
           <div className="pivot-card">
             <p className="pivot-coach-line muted">{greetingLine}</p>
@@ -138,19 +182,44 @@ export default function DailySession({ profile, onProfileChange }) {
   }
 
   if (stage === STAGE.DONE && evaluation) {
+    const cat = evaluation.patternCategory;
+    const catLabel = cat && cat !== 'none' ? PATTERN_LABELS[cat] : null;
     return (
       <div className="pivot-screen">
-        <Header streak={streak} elapsedSec={elapsedSec} showTimer={true} />
+        <Header
+          streak={streak}
+          elapsedSec={elapsedSec}
+          showTimer={true}
+          onReview={onNavReview}
+          reviewBadge={reviewBadgeCount}
+        />
         <div className="pivot-screen-body">
           <div className="pivot-card">
             <p className="pivot-done-mark">{evaluation.ok ? '✓' : '⟲'}</p>
-            <p className="pivot-coach-line">{feedbackHeader(evaluation.ok)}</p>
+            <p className="pivot-coach-line">{feedbackHeader(evaluation.ok, profile)}</p>
             {!evaluation.ok && (
               <p className="pivot-corrected">{evaluation.corrected}</p>
             )}
             <p className="pivot-coach-line muted">{evaluation.feedback_ko}</p>
+            {evaluation.explanation_ko && (
+              <p className="pivot-coach-line small muted">{evaluation.explanation_ko}</p>
+            )}
+            {catLabel && !evaluation.ok && (
+              <div className="pivot-pattern-pill">{catLabel}</div>
+            )}
+            {evaluation.alternatives && evaluation.alternatives.length > 0 && (
+              <div className="pivot-alt-block">
+                <div className="pivot-alt-label">다른 표현</div>
+                <ul className="pivot-alt-list">
+                  {evaluation.alternatives.slice(0, 2).map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            )}
             <div className="pivot-divider" />
             <p className="pivot-coach-line small">{closing(profile)}</p>
+            <button className="pivot-button" onClick={onNavReview}>
+              복습 보기
+            </button>
           </div>
         </div>
       </div>
@@ -159,13 +228,21 @@ export default function DailySession({ profile, onProfileChange }) {
 
   return (
     <div className="pivot-screen">
-      <Header streak={streak} elapsedSec={elapsedSec} showTimer={stage === STAGE.READY} />
+      <Header
+        streak={streak}
+        elapsedSec={elapsedSec}
+        showTimer={stage === STAGE.READY}
+        onReview={onNavReview}
+        reviewBadge={reviewBadgeCount}
+      />
       <div className="pivot-screen-body">
         <div className="pivot-card">
           <p className="pivot-coach-line muted small">{greetingLine}</p>
           {prompt && (
             <>
-              <p className="pivot-prompt-label">오늘의 한 문장</p>
+              <p className="pivot-prompt-label">
+                {isReview ? '복습 — 지난번 문장' : '오늘의 한 문장'}
+              </p>
               <p className="pivot-prompt-ko">{prompt.korean}</p>
               <textarea
                 className="pivot-textarea"
